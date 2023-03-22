@@ -179,23 +179,29 @@ void kick(Server &s, int fd, std::string input){
 for (it = s.getClients(fd)->getChanRights().begin(); it != s.getClients(fd)->getChanRights().end(); it++)
 {
 	std::cout << "channel: " << *it << std::endl;
-	std::cout << "data[0]: " << data[0] << std::endl;
+	std::cout << "data[1]: " << data[1] << std::endl;
+	if(s.getClientsUser(data[1]) == NULL)
+	{
+		std::cout << "WRONG" << std::endl;
+		break;
+	}
 	//if the client is connected to the channel that the operator wants to kick the user from
 	if (*it == data[0])
 	{
-		std::cout << "ici" << std::endl;
+		// std::cout << "ici" << std::endl;
+		std::cout << "ClientUser = " <<s.getClientsUser(data[1]) << std::endl;
 		//remove the user from the channel
 		s.rmChannelUser(data[0], s.getClientsUser(data[1]));
-		std::cout << "ici2" << std::endl;
+		// std::cout << "ici2" << std::endl;
 		std::string msg;
-		std::cout << "ici3" << std::endl;
+		// std::cout << "ici3" << std::endl;
 		//send a message to the user telling him he has been kicked
 		msg = ":you have been kicked from <";
 		msg += data[0];
 		msg += "> chan ";
 		msg += data[2];
 		msg += "\n";
-		std::cout << "ici4" << std::endl;
+		// std::cout << "ici4" << std::endl;
 		send(s.getClientsUser(data[1])->getClientSocket(), msg.c_str(), msg.length(), 0);
 		std::cout << "ici5" << std::endl;
 		break;
@@ -251,14 +257,17 @@ void privmsg(Server &s, int fd, std::string targetAndText){
 	}
 }
 void notice(Server &s, int fd, std::string targetAndText){
+	// Get the target and the text to send
 	std::string target;
 	std::string textToSend;
 	std::string msg;
 	Client *c;
 	std::list<Client *> *cl;
 
+	// We check if there is a space in the message
 	if (trimFirstSpace(fd, targetAndText))
 		return;
+	// We get the target and the text to send
 	try{
 		target = targetAndText.substr(0, targetAndText.find(" "));
 		textToSend = targetAndText.substr(target.length() + 1);
@@ -266,27 +275,42 @@ void notice(Server &s, int fd, std::string targetAndText){
 		std::cout << e.what() << std::endl;
 		return;
 	}
+	// We get the client with the target
 	c = s.getClients(target);
+	// std::cout << "target: " << target << std::endl;
+	// std::cout << "textToSend: " << textToSend << std::endl;
 	cl = s.getNames(target);
+	// We check if the client exist
 	if (c || cl){
+		// If we have a list of client
 		if (cl && !c){
+			// If the client is not on the channel
 			if (!s.clientOnChan(s.getClients(fd)->getUsername(), target)){
+				send(fd, ERR_CANNOTSENDTOCHAN, sizeof(ERR_CANNOTSENDTOCHAN), 0);
 				return;
 			}
 		}
+		// If there is no text to send
 		if (textToSend.empty()){
+			//std::cout << "no text to send" << std::endl;
 			return;
 		}
+		// We create the message
 		std::string nick = s.getClients(fd)->getNickname();
 		msg = ":";
 		msg += s.getClients(fd)->getID();
-		msg += " PRIVMSG ";
+		msg += "\e[31m NOTICE \n\e[0m";
 		msg += nick;
 		msg += " :";
 		msg += textToSend;
 		msg += "\n";
+		// sendMsgChan(msg, s, fd, target);
+		// send(c->getClientSocket(), msg.c_str(), msg.length(), 0);
+		// send(c->getClientSocket(), msg.c_str(), msg.length(), 0);
+		// If we have a client
 		if (c)
 			send(c->getClientSocket(), msg.c_str(), msg.length(), 0);
+		// If we have a list of client
 		else
 			sendMsgChan(msg, s, fd, target);
 	}else{
