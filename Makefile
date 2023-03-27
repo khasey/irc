@@ -24,7 +24,7 @@ OBJS = $(addsuffix .o, $(addprefix $(OBJ_DIR), $(PRE_SRCS)))
 NAME := ircserv
 
 CC := clang++
-CFLAGS := -Wall -Wextra -Werror -std=c++98
+CFLAGS := -Wall -Wextra -Werror -std=c++98 -g
 INC	:= -I./$(INC_DIR) -I./$(INC_DIR)Messages/
 RM = rm -f
 

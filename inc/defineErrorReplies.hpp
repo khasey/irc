@@ -13,5 +13,6 @@
 #define	ERR_NEEDMOREPARAMS		"461    ERR_NEEDMOREPARAMS :Not enough parameters\r\n"
 #define	ERR_ALREADYREGISTRED	"462    ERR_ALREADYREGISTRED :Unauthorized command (already registered)\r\n"
 #define	ERR_PASSWDMISMATCH		"464    ERR_PASSWDMISMATCH :Wrong password\r\n"
+#define	ERR_NEEDPASSWD		    "465    ERR_NEEDPASSWD :Need Password\r\n"
 
 #endif

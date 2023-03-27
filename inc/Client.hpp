@@ -6,6 +6,9 @@
 #include <netinet/in.h> // struct sockaddr_in
 #include <unistd.h>		//close
 #include <list>
+#include "Server.hpp"
+
+class Server;
 
 class Client{
 
@@ -32,6 +35,8 @@ public:
 	//Functions
 	void	promot(std::string chan);
 	void	demot(std::string chan);
+	void	addChanRights(const std::string& channelName, const std::string& rights);
+	void	promotUser(Server &s, Client &c, std::string data0, std::string data1);
 	
 	//setters
 	void	setClientSocket(int v);

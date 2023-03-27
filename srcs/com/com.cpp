@@ -1,8 +1,9 @@
 #include "../../inc/irc.hpp"
 #include <sys/ioctl.h>
-#define NBCMD 11
+#define NBCMD 12
 
 static int	checkRegister(int fd, int msg, Server &s);
+// static int	checkPassword(int fd, int msg, Server &s);
 static void	init_arr_funct(void (*arr[NBCMD])(Server &s, int fd, std::string str)); // init array for messages
 static void	manageMsg(std::string input, Server &s, int fd);
 
@@ -38,7 +39,8 @@ static void	manageMsg(std::string input, Server &s, int fd){
 	const int	msgsNb = NBCMD;
 	int			msg;
 	int			reg;
-	std::string msgs[msgsNb] = {"PASS", "NICK", "USER", "JOIN", "NAMES", "LIST", "PRIVMSG", "NOTICE", "PING", "KICK", "PART"};
+	// int			pw;
+	std::string msgs[msgsNb] = {"PASS", "NICK", "USER", "JOIN", "NAMES", "LIST", "PRIVMSG", "NOTICE", "PING", "OP", "KICK", "PART"};
 
 	input = input.substr(0, input.find("\n")).substr(0, input.find("\r"));
 	firstWord = input.substr(0, input.find(" "));
@@ -47,6 +49,7 @@ static void	manageMsg(std::string input, Server &s, int fd){
 		if (msgs[msg] == firstWord)
 			break ;
 	}
+	// pw = checkPassword(fd, msg, s);
 	reg = checkRegister(fd, msg, s);
 	if (reg && msg != msgsNb)
 		arr[msg](s, fd, input.substr(msgs[msg].length(), 201));
@@ -66,6 +69,7 @@ static void	init_arr_funct(void (*arr[NBCMD])(Server &s, int fd, std::string str
 	arr[E_PRIVMSG] = privmsg;
 	arr[E_NOTICE] = notice;
 	arr[E_PING] = ign;
+	arr[E_OP] = op;
 	arr[E_KICK] = kick;
 	arr[E_PART] = part;
 }
@@ -78,3 +82,12 @@ static int	checkRegister(int fd, int msg, Server &s){
 	}
 	return 1;
 }
+// static int	checkPassword(int fd, int msg, Server &s){
+// 	if (msg == E_PASS)
+// 		return 1;
+// 	if (!s.getClients(fd)->getPass()){
+// 		send(fd, ERR_NEEDPASSWD, sizeof(ERR_NEEDPASSWD), 0);
+// 		return 0;
+// 	}
+// 	return 1;
+// }

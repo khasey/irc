@@ -59,6 +59,7 @@ void	Server::addChannelUser(std::string chan, Client *c){
 			it->second->push_back(c);
 	}
 }
+
 // Remove an user from a channel
 void	Server::rmChannelUser(std::string chan, Client *c){
 	std::map<Channel *, std::list<Client*>* >::iterator it;

@@ -2,12 +2,101 @@
 
 static int trimFirstSpace(int fd, std::string &s);
 
-// ignore cmd
-void ign(Server &s, int z, std::string n){
-	(void)s;
-	(void)z;
-	(void)n;
+// CMD = OP test <user to promot> <reason>
+void op(Server &s, int fd, std::string cmd){
+
+	// If the command is empty, return
+	if (cmd.empty())
+		return;
+	// If the command starts with a space, remove it
+	if (trimFirstSpace(fd, cmd))
+		return;
+	size_t i = 0;
+	size_t pos = 0;
+	std::string data[3];
+
+	// Split the command in 3 parts: the channel, the user to promot and the reason
+	while ((pos = cmd.find(" ")) != std::string::npos){
+		data[i] = cmd.substr(0, pos);
+		cmd.erase(0, pos + 1);
+		i++;
+	}
+	data[i] = cmd.substr(0, pos);
+	std::list<std::string>				chanRights = s.getClients(fd)->getChanRights();
+	std::list<std::string>::iterator 	itl;
+
+	// Check if the user is authorized to promot someone
+	for (itl = chanRights.begin(); itl != chanRights.end(); ++itl)
+		if (*itl == data[1]){
+			return;
+		}
+
+	// Check if the user is in the channel
+	//get the list of channels the client is connected to
+	std::list<std::string>::iterator it;
+	for (it = s.getClients(fd)->getChanRights().begin(); it != s.getClients(fd)->getChanRights().end(); it++)
+	{
+		if(s.getClientsUser(data[1]) == NULL)
+		{
+			send(fd, "Error : This user doesnt exists.\n", strlen("Error : This user doesnt exists.\n"), 0);
+			break;
+		}
+			
+	//if the client is connected to the channel that the operator wants to promot the user from
+		if (*it == data[0])
+		{
+			
+			//promot the user from the channel
+			Client* client;
+			client = s.getClientsUser(data[1]);
+			client->promot(data[0]);
+			
+			std::string msg;
+			//send a message to the user telling him he has been promoted
+			msg = ":you have been promoted to Operator of <";
+			msg += data[0];
+			msg += "> chan ";
+			msg += data[2];
+			msg += "\n";
+			send(s.getClientsUser(data[1])->getClientSocket(), msg.c_str(), msg.length(), 0);
+			break;
+		}
+	}
 }
+
+
+
+void ign(Server &s, int fd, std::string n){
+	(void)s;
+	(void)n;
+	send(fd, "PONG 127.0.0.1\n", strlen("PONG 127.0.0.1\n"), 0);
+	std::cout << "                     O 					" << std::endl;
+    std::cout << "                   _/|)_-O				" << std::endl;
+    std::cout << "                  ___|_______				" << std::endl;
+    std::cout << "                 (     |   o )			" << std::endl;
+    std::cout << "                (      |      )			" << std::endl;
+    std::cout << "               #################			" << std::endl;
+    std::cout << "              (   _ ( )|        )			" << std::endl;
+    std::cout << "             (   ( ) | |         )		" << std::endl;
+    std::cout << "            (  (  |_/  |          )		" << std::endl;
+    std::cout << "           (____(/|____|___________)		" << std::endl;
+    std::cout << "              |   |             |			" << std::endl;
+    std::cout << "              |  / )            |			" << std::endl;
+    std::cout << "              | /   )           |			" << std::endl;
+    std::cout << "              _/    /_					" << std::endl;
+	std::cout << "                     						" << std::endl;
+	std::cout << "		88888b.  .d88b. 88888b.  .d88b. 	" << std::endl;
+	std::cout << "		888  88bd88""88b888  88bd88P 88b	" << std::endl;
+	std::cout << "		888  888888  888888  888888  888	" << std::endl;
+	std::cout << "		888 d88PY88..88P888  888Y88b 888	" << std::endl;
+	std::cout << "		88888P    Y88P  888  888  Y88888 	" << std::endl;
+	std::cout << "		888                          888 	" << std::endl;
+	std::cout << "		888                     Y8b d88P 	" << std::endl;
+	std::cout << "		888                       Y88P   	" << std::endl;
+}
+
+
+
 
 // Connection registration
 
@@ -178,32 +267,24 @@ void kick(Server &s, int fd, std::string input){
 	//get the list of channels the client is connected to
 for (it = s.getClients(fd)->getChanRights().begin(); it != s.getClients(fd)->getChanRights().end(); it++)
 {
-	std::cout << "channel: " << *it << std::endl;
-	std::cout << "data[1]: " << data[1] << std::endl;
 	if(s.getClientsUser(data[1]) == NULL)
 	{
-		std::cout << "WRONG" << std::endl;
+		send(fd, "Error : This user doesnt exists.\n", strlen("Error : This user doesnt exists.\n"), 0);
 		break;
 	}
 	//if the client is connected to the channel that the operator wants to kick the user from
 	if (*it == data[0])
 	{
-		// std::cout << "ici" << std::endl;
-		std::cout << "ClientUser = " <<s.getClientsUser(data[1]) << std::endl;
 		//remove the user from the channel
 		s.rmChannelUser(data[0], s.getClientsUser(data[1]));
-		// std::cout << "ici2" << std::endl;
 		std::string msg;
-		// std::cout << "ici3" << std::endl;
 		//send a message to the user telling him he has been kicked
 		msg = ":you have been kicked from <";
 		msg += data[0];
 		msg += "> chan ";
 		msg += data[2];
 		msg += "\n";
-		// std::cout << "ici4" << std::endl;
 		send(s.getClientsUser(data[1])->getClientSocket(), msg.c_str(), msg.length(), 0);
-		std::cout << "ici5" << std::endl;
 		break;
 	}
 }
@@ -257,17 +338,14 @@ void privmsg(Server &s, int fd, std::string targetAndText){
 	}
 }
 void notice(Server &s, int fd, std::string targetAndText){
-	// Get the target and the text to send
 	std::string target;
 	std::string textToSend;
 	std::string msg;
 	Client *c;
 	std::list<Client *> *cl;
 
-	// We check if there is a space in the message
 	if (trimFirstSpace(fd, targetAndText))
 		return;
-	// We get the target and the text to send
 	try{
 		target = targetAndText.substr(0, targetAndText.find(" "));
 		textToSend = targetAndText.substr(target.length() + 1);
@@ -275,42 +353,27 @@ void notice(Server &s, int fd, std::string targetAndText){
 		std::cout << e.what() << std::endl;
 		return;
 	}
-	// We get the client with the target
 	c = s.getClients(target);
-	// std::cout << "target: " << target << std::endl;
-	// std::cout << "textToSend: " << textToSend << std::endl;
 	cl = s.getNames(target);
-	// We check if the client exist
 	if (c || cl){
-		// If we have a list of client
 		if (cl && !c){
-			// If the client is not on the channel
 			if (!s.clientOnChan(s.getClients(fd)->getUsername(), target)){
-				send(fd, ERR_CANNOTSENDTOCHAN, sizeof(ERR_CANNOTSENDTOCHAN), 0);
 				return;
 			}
 		}
-		// If there is no text to send
 		if (textToSend.empty()){
-			//std::cout << "no text to send" << std::endl;
 			return;
 		}
-		// We create the message
 		std::string nick = s.getClients(fd)->getNickname();
 		msg = ":";
 		msg += s.getClients(fd)->getID();
-		msg += "\e[31m NOTICE \n\e[0m";
+		msg += "\e[31m NOTICE by \e[0m ";
 		msg += nick;
 		msg += " :";
 		msg += textToSend;
 		msg += "\n";
-		// sendMsgChan(msg, s, fd, target);
-		// send(c->getClientSocket(), msg.c_str(), msg.length(), 0);
-		// send(c->getClientSocket(), msg.c_str(), msg.length(), 0);
-		// If we have a client
 		if (c)
 			send(c->getClientSocket(), msg.c_str(), msg.length(), 0);
-		// If we have a list of client
 		else
 			sendMsgChan(msg, s, fd, target);
 	}else{
@@ -318,13 +381,6 @@ void notice(Server &s, int fd, std::string targetAndText){
 	}
 }
 
-
-// void	pong(int fd){
-// 	send(fd, "PONG 127.0.0.1", strlen("PONG 127.0.0.1"), 0);
-// 	std::cout << "*-*" << std::endl;
-// 	std::cout << "PONG" << std::endl;
-// 	std::cout << "*-*" << std::endl;
-// }
 
 static int trimFirstSpace(int fd, std::string &s){
 	try{
